@@ -145,7 +145,7 @@ describe LevelDb do
         empty_db.close
       end
 
-      context 'with an offset' do
+      context 'with and offset, range and/or limit' do
         it 'scans from the offset to the end of the database' do
           seen = []
           db.each(from: 'one') do |key, _|
@@ -159,11 +159,51 @@ describe LevelDb do
           enum = db.each(from: 'three')
           enum.to_a.should == [['three', '3'], ['two', '2']]
         end
+
+        it 'scans up to a key' do
+          seen = db.each(to: 'three').to_a.map(&:first)
+          seen.should == %w[five four one three]
+        end
+
+        it 'scans up to a specified number of values' do
+          seen = db.each(limit: 3).to_a.map(&:first)
+          seen.should == %w[five four one]
+        end
+
+        it 'scans everything if the limit is larger than the database' do
+          seen = db.each(limit: 100).to_a.map(&:first)
+          seen.should == %w[five four one three two]
+        end
+
+        it 'combines the offset, range and limit options' do
+          seen = db.each(from: 'four', to: 'three', limit: 2).to_a.map(&:first)
+          seen.should == %w[four one]
+          seen = db.each(from: 'four', to: 'three', limit: 4).to_a.map(&:first)
+          seen.should == %w[four one three]
+        end
+
+        it 'does not require the offset key to exist' do
+          seen = db.each(from: 'f').to_a.map(&:first)
+          seen.first.should == 'five'
+        end
+
+        it 'does not require the end key to exist' do
+          seen = db.each(to: 'o').to_a.map(&:first)
+          seen.last.should == 'four'
+        end
       end
 
-      context 'with reverse: true' do
+      context 'when scanning in reverse' do
         it 'scans from the end of the database to the beginning' do
-          db.each(reverse: true).to_a.map(&:first).should == %w[two three one four five]
+          result = db.each(reverse: true).to_a.map(&:first)
+          result.should == %w[two three one four five]
+        end
+
+        it 'works with ranges' do
+          result = db.each(from: 'three', to: 'four', reverse: true).to_a.map(&:first)
+          result.should == %w[three one four]
+          result = db.each(from: 'three', limit: 2, reverse: true).to_a.map(&:first)
+          result.should == %w[three one]
         end
       end
     end

@@ -97,15 +97,7 @@ module LevelDb
     end
 
     def each(options={}, &block)
-      iterator = @db.iterator
-      if options && (offset = options[:from])
-        iterator.seek(encode_key(offset))
-      elsif options[:reverse]
-        iterator.seek_to_last
-      else
-        iterator.seek_to_first
-      end
-      scan = Scan.new(iterator, options[:reverse])
+      scan = Scan.new(@db.iterator, options)
       scan.each(&block) if block_given?
       scan
     end
@@ -119,24 +111,58 @@ module LevelDb
     include Encoding
     include Enumerable
 
-    def initialize(iterator, reverse=false)
+    def initialize(iterator, options={})
       @iterator = iterator
-      @reverse = reverse
+      @from = options[:from]
+      @to = options[:to]
+      @reverse = options[:reverse]
+      @limit = options[:limit]
     end
 
-    def each
+    def each(&block)
       return self unless block_given?
+      init
       if @reverse
-        entry = @iterator.peek_next
-        while entry
-          yield decode_key(entry.key), decode_value(entry.value)
-          entry = @iterator.has_prev && @iterator.prev
-        end
+        reverse_each(block)
       else
-        while @iterator.has_next
-          entry = @iterator.next
-          yield decode_key(entry.key), decode_value(entry.value)
-        end
+        forward_each(block)
+      end
+    end
+
+    private
+
+    def init
+      if @from
+        @iterator.seek(encode_key(@from))
+      elsif @reverse
+        @iterator.seek_to_last
+      else
+        @iterator.seek_to_first
+      end
+    end
+
+    def reverse_each(block)
+      count = 0
+      entry = @iterator.peek_next
+      while entry
+        key = decode_key(entry.key)
+        break unless @to.nil? || key >= @to
+        block.call(key, decode_value(entry.value))
+        count += 1
+        break unless @limit.nil? || count < @limit
+        entry = @iterator.has_prev && @iterator.prev
+      end
+    end
+
+    def forward_each(block)
+      count = 0
+      while @iterator.has_next
+        entry = @iterator.next
+        key = decode_key(entry.key)
+        break unless @to.nil? || key <= @to
+        block.call(key, decode_value(entry.value))
+        count += 1
+        break unless @limit.nil? || count < @limit
       end
     end
   end
