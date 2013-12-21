@@ -28,7 +28,7 @@ describe LevelDb do
 
     context 'when disabling the create_if_missing option' do
       it 'complains if the database doesn\'t exist' do
-        expect { LevelDb.open(db_path, create_if_missing: false) }.to raise_error(LevelDb::LevelDbError)
+        expect { LevelDb.open(db_path, create_if_missing: false) }.to raise_error(LevelDb::Error)
       end
     end
 
@@ -36,7 +36,7 @@ describe LevelDb do
       it 'complains if the database exists' do
         db = LevelDb.open(db_path)
         db.close
-        expect { LevelDb.open(db_path, error_if_exists: true) }.to raise_error(LevelDb::LevelDbError)
+        expect { LevelDb.open(db_path, error_if_exists: true) }.to raise_error(LevelDb::Error)
       end
     end
   end

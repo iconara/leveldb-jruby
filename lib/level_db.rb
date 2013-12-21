@@ -16,7 +16,7 @@ module LevelDb
   def self.open(path, options={})
     Db.new(Library::JniDBFactory.factory.open(java.io.File.new(path), create_db_options(options)))
   rescue Library::Internal::NativeDB::DBException => e
-    raise LevelDbError, e.message, e.backtrace
+    raise self::Error, e.message, e.backtrace
   end
 
   def self.repair(path, options={})
@@ -38,7 +38,7 @@ module LevelDb
     end
   end
 
-  LevelDbError = Class.new(StandardError)
+  Error = Class.new(StandardError)
 
   module Encoding
     def encode_key(str)
