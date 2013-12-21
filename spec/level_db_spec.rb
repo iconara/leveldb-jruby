@@ -206,6 +206,23 @@ describe LevelDb do
           result.should == %w[three one]
         end
       end
+
+      context 'when using the returned Enumerable' do
+        it 'supports external enumeration' do
+          enum = db.each(from: 'three', limit: 2)
+          enum.next.should == ['three', '3']
+          enum.next.should == ['two', '2']
+          expect { enum.next }.to raise_error(StopIteration)
+        end
+
+        it 'supports #next? to avoid raising StopIteration' do
+          enum = db.each(from: 'three', limit: 2)
+          enum.next
+          enum.next?.should be_true
+          enum.next
+          enum.next?.should be_false
+        end
+      end
     end
   end
 end

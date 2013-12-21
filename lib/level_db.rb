@@ -119,19 +119,29 @@ module LevelDb
       @limit = options[:limit]
     end
 
-    def each(&block)
-      return self unless block_given?
+    def next
+      raise StopIteration unless next?
+      v, @next = @next, nil
+      v
+    end
+
+    def next?
       init
-      if @reverse
-        reverse_each(block)
-      else
-        forward_each(block)
-      end
+      @next = internal_next unless @next
+      !!@next
+    end
+
+    def each
+      return self unless block_given?
+      yield self.next while next?
     end
 
     private
 
     def init
+      return if @started
+      @started = true
+      @count = 0
       if @from
         @iterator.seek(encode_key(@from))
       elsif @reverse
@@ -141,28 +151,41 @@ module LevelDb
       end
     end
 
-    def reverse_each(block)
-      count = 0
-      entry = @iterator.peek_next
-      while entry
-        key = decode_key(entry.key)
-        break unless @to.nil? || key >= @to
-        block.call(key, decode_value(entry.value))
-        count += 1
-        break unless @limit.nil? || count < @limit
-        entry = @iterator.has_prev && @iterator.prev
+    def internal_next
+      if @reverse
+        reverse_next
+      else
+        forward_next
       end
     end
 
-    def forward_each(block)
-      count = 0
-      while @iterator.has_next
-        entry = @iterator.next
+    def reverse_next
+      return nil if @limit && @count >= @limit
+      return nil if @exhausted
+      entry = @iterator.peek_next
+      if entry
         key = decode_key(entry.key)
-        break unless @to.nil? || key <= @to
-        block.call(key, decode_value(entry.value))
-        count += 1
-        break unless @limit.nil? || count < @limit
+        return nil if @to && key < @to
+        @count += 1
+        @exhausted = !@iterator.has_prev
+        @exhausted || @iterator.prev
+        return key, decode_value(entry.value)
+      end
+    end
+
+    def forward_next
+      return nil if @limit && @count >= @limit
+      return nil if @exhausted
+      entry = @iterator.has_next && @iterator.peek_next
+      if entry
+        key = decode_key(entry.key)
+        return nil if @to && key > @to
+        @count += 1
+        @iterator.has_next && @iterator.next
+        return key, decode_value(entry.value)
+      else
+        @exhausted = true
+        nil
       end
     end
   end
