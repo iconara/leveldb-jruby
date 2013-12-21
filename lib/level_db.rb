@@ -117,6 +117,11 @@ module LevelDb
       @to = options[:to]
       @reverse = options[:reverse]
       @limit = options[:limit]
+      rewind
+    end
+
+    def close
+      @iterator.close
     end
 
     def next
@@ -133,7 +138,17 @@ module LevelDb
 
     def each
       return self unless block_given?
+      rewind
       yield self.next while next?
+      close
+      self
+    end
+
+    def rewind
+      @next = nil
+      @started = false
+      @exhausted = false
+      @count = 0
     end
 
     private

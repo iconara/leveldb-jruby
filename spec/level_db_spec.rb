@@ -222,6 +222,15 @@ describe LevelDb do
           enum.next
           enum.next?.should be_false
         end
+
+        it 'is rewindable' do
+          enum = db.each(from: 'three', limit: 2)
+          enum.next.should == ['three', '3']
+          enum.next.should == ['two', '2']
+          enum.rewind
+          enum.next.should == ['three', '3']
+          enum.next.should == ['two', '2']
+        end
       end
     end
   end
