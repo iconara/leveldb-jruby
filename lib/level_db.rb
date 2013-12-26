@@ -42,10 +42,12 @@ module LevelDb
 
   module Encoding
     def encode_key(str)
+      return str unless str
       str.to_java_bytes
     end
 
     def encode_value(str)
+      return str unless str
       str.to_java_bytes
     end
 
@@ -64,14 +66,20 @@ module LevelDb
     def get(key)
       value = @db.get(encode_key(key))
       value && decode_value(value)
+    rescue java.lang.IllegalArgumentException => e
+      raise ArgumentError, e.message, e.backtrace
     end
 
     def put(key, value)
       @db.put(encode_key(key), encode_value(value))
+    rescue java.lang.IllegalArgumentException => e
+      raise ArgumentError, e.message, e.backtrace
     end
 
     def delete(key)
       @db.delete(encode_key(key))
+    rescue java.lang.IllegalArgumentException => e
+      raise ArgumentError, e.message, e.backtrace
     end
   end
 

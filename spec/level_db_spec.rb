@@ -84,6 +84,16 @@ describe LevelDb do
         db.get('hello').should be_nil
       end
 
+      it 'complains when the value is nil' do
+        expect { db.put('hello', nil) }.to raise_error(ArgumentError)
+      end
+
+      it 'complains when the key is nil' do
+        expect { db.put(nil, 'hello') }.to raise_error(ArgumentError)
+        expect { db.get(nil) }.to raise_error(ArgumentError)
+        expect { db.delete(nil) }.to raise_error(ArgumentError)
+      end
+
       it 'deletes a value' do
         db.put('some', 'value')
         db.delete('some')
