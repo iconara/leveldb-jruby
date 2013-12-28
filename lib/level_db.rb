@@ -105,9 +105,9 @@ module LevelDb
     end
 
     def each(options={}, &block)
-      scan = Scan.new(@db.iterator, options)
-      scan.each(&block) if block_given?
-      scan
+      cursor = Cursor.new(@db.iterator, options)
+      cursor.each(&block) if block_given?
+      cursor
     end
 
     def snapshot
@@ -115,7 +115,7 @@ module LevelDb
     end
   end
 
-  class Scan
+  class Cursor
     include Encoding
     include Enumerable
 
