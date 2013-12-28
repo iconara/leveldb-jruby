@@ -241,6 +241,24 @@ describe LevelDb do
           enum.next.should == ['three', '3']
           enum.next.should == ['two', '2']
         end
+
+        it 'supports lazy #map' do
+          called = false
+          enum = db.each(from: 'three', limit: 2)
+          transformed = enum.map { |k, v| called = true; v }.map { |v| v.to_i * 2 }
+          called.should be_false
+          transformed.each { }
+          called.should be_true
+        end
+
+        it 'supports lazy #select' do
+          called = false
+          enum = db.each(from: 'three', limit: 2)
+          filtered = enum.select { |k, v| called = true; v == '3' }.select { |k, v| true }
+          called.should be_false
+          filtered.each { }
+          called.should be_true
+        end
       end
     end
   end
