@@ -1,24 +1,42 @@
-# Leveldb::Jruby
+# LevelDB for JRuby
 
-TODO: Write a gem description
+_There is not yet any stable release of this project._
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
-    gem 'leveldb-jruby'
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install leveldb-jruby
+    gem 'leveldb-jruby', require: 'leveldb', github: 'iconara/leveldb-jruby'
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+db = LevelDb.open('path/to/database')
+
+# basic key operations
+db.put('foo', 'bar')
+puts db.get('foo') # => 'bar'
+db.delete('foo')
+
+# iterating over a range of keys
+10.times { |i| db.put("foo#{i.to_s.rjust(2, '0')}", i.to_s) }
+db.each(from: 'foo', to: 'foo08') do |key, value|
+  puts "#{key} => #{value}"
+end
+
+# batch mutations
+db.batch do |batch|
+  batch.put('foo', 'bar')
+  batch.delete('bar')
+end
+
+# read from a snapshot
+db.put('foo', 'bar')
+snapshot = db.snapshot
+db.put('foo', 'baz')
+puts snapshot.get('foo') # => 'bar'
+puts db.get('foo') # => 'baz'
+```
 
 ## Contributing
 
