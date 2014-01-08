@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-require 'leveldbjni-all-1.8'
+require 'leveldbjni-jars'
 
 
 module LevelDb

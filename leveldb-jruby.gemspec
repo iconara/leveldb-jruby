@@ -14,6 +14,8 @@ Gem::Specification.new do |spec|
   spec.homepage      = 'http://github.com/iconara/leveldb-jruby'
   spec.license       = 'BSD 3-Clause License'
 
+  spec.add_dependency 'leveldbjni-jars', '~> 1.8.0'
+
   spec.files         = Dir['lib/**/*.rb', 'bin/*', 'README.md']
   spec.require_paths = %w(lib)
 end
