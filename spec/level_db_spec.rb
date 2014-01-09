@@ -215,6 +215,16 @@ describe LevelDb do
           result = db.each(from: 'three', limit: 2, reverse: true).to_a.map(&:first)
           result.should == %w[three one]
         end
+
+        it 'works when starting beyond the last element' do
+          result = db.each(from: 'x', reverse: true).to_a.map(&:first)
+          result.should == %w[two three one four five]
+        end
+
+        it 'works when starting before the first element' do
+          result = db.each(from: 'a', reverse: true).to_a.map(&:first)
+          result.should == %w[]
+        end
       end
 
       context 'when using the returned Enumerable' do

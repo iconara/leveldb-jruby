@@ -187,7 +187,6 @@ module LevelDb
     end
 
     def next?
-      init
       @next = internal_next unless @next
       !!@next
     end
@@ -215,6 +214,9 @@ module LevelDb
       @count = 0
       if @from
         @iterator.seek(encode_key(@from))
+        unless @iterator.has_next
+          @iterator.seek_to_last
+        end
       elsif @reverse
         @iterator.seek_to_last
       else
@@ -223,20 +225,26 @@ module LevelDb
     end
 
     def internal_next
+      init
       if @reverse
         reverse_next
       else
         forward_next
       end
+    rescue NativeException
+      raise
+    end
+
+    def peek_next_entry
+      return nil if @limit && @count >= @limit
+      return nil if @exhausted
+      @iterator.has_next && @iterator.peek_next
     end
 
     def reverse_next
-      return nil if @limit && @count >= @limit
-      return nil if @exhausted
-      entry = @iterator.peek_next
-      if entry
+      if (entry = peek_next_entry)
         key = decode_key(entry.key)
-        return nil if @to && key < @to
+        return nil if (@to && key < @to) || (@from && @from < key)
         @count += 1
         @exhausted = !@iterator.has_prev
         @exhausted || @iterator.prev
@@ -245,12 +253,9 @@ module LevelDb
     end
 
     def forward_next
-      return nil if @limit && @count >= @limit
-      return nil if @exhausted
-      entry = @iterator.has_next && @iterator.peek_next
-      if entry
+      if (entry = peek_next_entry)
         key = decode_key(entry.key)
-        return nil if @to && key > @to
+        return nil if (@to && key > @to) || (@from && @from > key)
         @count += 1
         @iterator.has_next && @iterator.next
         return key, decode_value(entry.value)
