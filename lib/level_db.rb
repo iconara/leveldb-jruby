@@ -226,43 +226,23 @@ module LevelDb
 
     def internal_next
       init
-      if @reverse
-        reverse_next
-      else
-        forward_next
+      return nil if @exhausted || (@limit && @count >= @limit)
+      if (entry = @iterator.has_next && @iterator.peek_next)
+        key = decode_key(entry.key)
+        if @reverse
+          return nil if (@to && key < @to) || (@from && @from < key)
+          @exhausted = !@iterator.has_prev
+          @exhausted || @iterator.prev
+        else
+          return nil if (@to && key > @to) || (@from && @from > key)
+          @exhausted = !@iterator.has_next
+          @exhausted || @iterator.next
+        end
+        @count += 1
+        return key, decode_value(entry.value)
       end
     rescue NativeException
       raise
-    end
-
-    def peek_next_entry
-      return nil if @limit && @count >= @limit
-      return nil if @exhausted
-      @iterator.has_next && @iterator.peek_next
-    end
-
-    def reverse_next
-      if (entry = peek_next_entry)
-        key = decode_key(entry.key)
-        return nil if (@to && key < @to) || (@from && @from < key)
-        @count += 1
-        @exhausted = !@iterator.has_prev
-        @exhausted || @iterator.prev
-        return key, decode_value(entry.value)
-      end
-    end
-
-    def forward_next
-      if (entry = peek_next_entry)
-        key = decode_key(entry.key)
-        return nil if (@to && key > @to) || (@from && @from > key)
-        @count += 1
-        @iterator.has_next && @iterator.next
-        return key, decode_value(entry.value)
-      else
-        @exhausted = true
-        nil
-      end
     end
   end
 
