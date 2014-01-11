@@ -217,6 +217,9 @@ module LevelDb
         unless @iterator.has_next
           @iterator.seek_to_last
         end
+        if @reverse && @iterator.has_prev && (entry = @iterator.peek_next) && decode_key(entry.key) > @from
+          @iterator.prev
+        end
       elsif @reverse
         @iterator.seek_to_last
       else

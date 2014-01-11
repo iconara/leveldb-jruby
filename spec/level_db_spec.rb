@@ -216,6 +216,13 @@ describe LevelDb do
           result.should == %w[three one]
         end
 
+        it 'starts with the right element' do
+          result = db.each(from: 'three', reverse: true).to_a.map(&:first)
+          result.first.should == 'three'
+          result = db.each(from: "three\xff", reverse: true).to_a.map(&:first)
+          result.first.should == 'three'
+        end
+
         it 'works when starting beyond the last element' do
           result = db.each(from: 'x', reverse: true).to_a.map(&:first)
           result.should == %w[two three one four five]
