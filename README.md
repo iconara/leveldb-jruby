@@ -1,12 +1,10 @@
 # LevelDB for JRuby
 
-_There is not yet any stable release of this project._
-
 ## Installation
 
 Add this line to your application's Gemfile:
 
-    gem 'leveldb-jruby', require: 'leveldb', github: 'iconara/leveldb-jruby'
+    gem 'leveldb-jruby', require: 'leveldb'
 
 ## Usage
 
