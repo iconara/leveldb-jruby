@@ -113,6 +113,14 @@ module LevelDb
     def snapshot
       Snapshot.new(@db)
     end
+
+    def suspend_compactions
+      @db.suspend_compactions
+    end
+
+    def resume_compactions
+      @db.resume_compactions
+    end
   end
 
   module LazyEnumerable
