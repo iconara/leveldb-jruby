@@ -83,6 +83,32 @@ describe LevelDb do
       end
     end
 
+    describe '#compact_range' do
+      let :leveldb do
+        double(:db, compact_range: nil)
+      end
+
+      it 'compacts the given range' do
+        LevelDb::Db.new(leveldb).compact_range(from: 'one', to: 'three')
+        leveldb.should have_received(:compact_range).with('one'.to_java_bytes, 'three'.to_java_bytes)
+      end
+
+      it "is ok to omit the 'from' option" do
+        LevelDb::Db.new(leveldb).compact_range(to: 'three')
+        leveldb.should have_received(:compact_range).with(nil, 'three'.to_java_bytes)
+      end
+
+      it "is ok to omit the 'to' option" do
+        LevelDb::Db.new(leveldb).compact_range(from: 'one')
+        leveldb.should have_received(:compact_range).with('one'.to_java_bytes, nil)
+      end
+
+      it "is ok to omit all options" do
+        LevelDb::Db.new(leveldb).compact_range
+        leveldb.should have_received(:compact_range).with(nil, nil)
+      end
+    end
+
     describe '#close' do
       it 'closes the database' do
         db = double(:db)

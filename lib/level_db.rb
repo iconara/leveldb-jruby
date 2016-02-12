@@ -121,6 +121,12 @@ module LevelDb
     def resume_compactions
       @db.resume_compactions
     end
+
+    def compact_range(options={})
+      from = options[:from]
+      to = options[:to]
+      @db.compact_range(encode_key(from), encode_key(to))
+    end
   end
 
   module LazyEnumerable
