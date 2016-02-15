@@ -85,27 +85,35 @@ describe LevelDb do
 
     describe '#compact_range' do
       let :leveldb do
-        double(:db, compact_range: nil)
+        leveldb = double(:db)
+        leveldb.stub(:compact_range) do |*args|
+          calls << args.map { |arg| arg && String.from_java_bytes(arg) }
+        end
+        leveldb
+      end
+
+      let :calls do
+        []
       end
 
       it 'compacts the given range' do
         LevelDb::Db.new(leveldb).compact_range(from: 'one', to: 'three')
-        leveldb.should have_received(:compact_range).with('one'.to_java_bytes, 'three'.to_java_bytes)
+        calls.should include(['one', 'three'])
       end
 
-      it "is ok to omit the 'from' option" do
+      it "compacts the whole range to the 'to' key when the 'from' option is omitted" do
         LevelDb::Db.new(leveldb).compact_range(to: 'three')
-        leveldb.should have_received(:compact_range).with(nil, 'three'.to_java_bytes)
+        calls.should include([nil, 'three'])
       end
 
-      it "is ok to omit the 'to' option" do
+      it "compacts the whole range from the 'from' key when the 'to' option is omitted" do
         LevelDb::Db.new(leveldb).compact_range(from: 'one')
-        leveldb.should have_received(:compact_range).with('one'.to_java_bytes, nil)
+        calls.should include(['one', nil])
       end
 
-      it "is ok to omit all options" do
+      it "compacts the whole range when the both the 'from' and 'to' options are omitted" do
         LevelDb::Db.new(leveldb).compact_range
-        leveldb.should have_received(:compact_range).with(nil, nil)
+        calls.should include([nil, nil])
       end
     end
 
