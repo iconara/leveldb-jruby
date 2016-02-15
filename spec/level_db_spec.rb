@@ -99,6 +99,28 @@ describe LevelDb do
       end
     end
 
+    describe '#full_compaction' do
+      let :sstables do
+        %W[a\nb\nc\nd a\nc a a]
+      end
+
+      let :leveldb do
+        leveldb = double(:db)
+        leveldb.stub(:compact_range)
+        leveldb.stub(:get_property) do |property|
+          if property == 'leveldb.sstables'
+            sstables.shift
+          end
+        end
+        leveldb
+      end
+
+      it 'compacts until there are no changes in the sstables' do
+        LevelDb::Db.new(leveldb).full_compaction
+        leveldb.should have_received(:compact_range).with(nil, nil).exactly(3).times
+      end
+    end
+
     describe '#close' do
       it 'closes the database' do
         db = double(:db)

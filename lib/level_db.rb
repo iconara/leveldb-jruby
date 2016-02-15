@@ -119,6 +119,18 @@ module LevelDb
       to = options[:to]
       @db.compact_range(encode_key(from), encode_key(to))
     end
+
+    def full_compaction
+      sstables = @db.get_property(SSTABLES_PROPERTY)
+      pre_compaction_sstables = nil
+      until pre_compaction_sstables == sstables
+        pre_compaction_sstables = sstables
+        compact_range
+        sstables = @db.get_property(SSTABLES_PROPERTY)
+      end
+    end
+
+    SSTABLES_PROPERTY = 'leveldb.sstables'.freeze
   end
 
   module LazyEnumerable

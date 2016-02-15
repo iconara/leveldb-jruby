@@ -37,6 +37,7 @@ puts db.get('foo') # => 'baz'
 
 # compactions
 db.compact_range(from: 'foo', to: 'foo08')
+db.full_compaction
 ```
 
 ## Contributing
