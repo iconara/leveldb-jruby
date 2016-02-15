@@ -65,24 +65,6 @@ describe LevelDb do
       db.close
     end
 
-    describe '#suspend_compactions' do
-      it 'suspends compactions' do
-        db = double(:db)
-        db.stub(:suspend_compactions)
-        LevelDb::Db.new(db).suspend_compactions
-        db.should have_received(:suspend_compactions)
-      end
-    end
-
-    describe '#resume_compactions' do
-      it 'resumes compactions' do
-        db = double(:db)
-        db.stub(:resume_compactions)
-        LevelDb::Db.new(db).resume_compactions
-        db.should have_received(:resume_compactions)
-      end
-    end
-
     describe '#compact_range' do
       let :leveldb do
         leveldb = double(:db)

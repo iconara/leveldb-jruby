@@ -114,14 +114,6 @@ module LevelDb
       Snapshot.new(@db)
     end
 
-    def suspend_compactions
-      @db.suspend_compactions
-    end
-
-    def resume_compactions
-      @db.resume_compactions
-    end
-
     def compact_range(options={})
       from = options[:from]
       to = options[:to]

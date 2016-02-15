@@ -36,9 +36,7 @@ puts snapshot.get('foo') # => 'bar'
 puts db.get('foo') # => 'baz'
 
 # compactions
-db.suspend_compactions
 db.compact_range(from: 'foo', to: 'foo08')
-db.resume_compactions
 ```
 
 ## Contributing
