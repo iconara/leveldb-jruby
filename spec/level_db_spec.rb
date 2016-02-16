@@ -119,6 +119,20 @@ describe LevelDb do
         LevelDb::Db.new(leveldb).full_compaction
         leveldb.should have_received(:compact_range).with(nil, nil).exactly(3).times
       end
+
+      it "raises ConvergenceError unless convergence is reached within #{described_class::Db::MAX_ITERATIONS} iterations" do
+        sstables.replace((1..1000).map(&:to_s))
+        expect { LevelDb::Db.new(leveldb).full_compaction }.to raise_error(described_class::Db::ConvergenceError)
+        leveldb.should have_received(:compact_range).with(nil, nil).exactly(described_class::Db::MAX_ITERATIONS).times
+      end
+
+      context 'when the "max_iterations" option is present' do
+        it 'raises ConvergenceError unless convergence is reached within "max_iterations" iterations' do
+          sstables.replace((1..1000).map(&:to_s))
+          expect { LevelDb::Db.new(leveldb).full_compaction(max_iterations: 12) }.to raise_error(described_class::Db::ConvergenceError)
+          leveldb.should have_received(:compact_range).with(nil, nil).exactly(12).times
+        end
+      end
     end
 
     describe '#close' do

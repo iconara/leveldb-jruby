@@ -120,17 +120,25 @@ module LevelDb
       @db.compact_range(encode_key(from), encode_key(to))
     end
 
-    def full_compaction
+    def full_compaction(options={})
       sstables = @db.get_property(SSTABLES_PROPERTY)
       pre_compaction_sstables = nil
+      i = 0
       until pre_compaction_sstables == sstables
-        pre_compaction_sstables = sstables
-        compact_range
-        sstables = @db.get_property(SSTABLES_PROPERTY)
+        if i < options.fetch(:max_iterations, MAX_ITERATIONS)
+          pre_compaction_sstables = sstables
+          compact_range
+          sstables = @db.get_property(SSTABLES_PROPERTY)
+          i += 1
+        else
+          raise ConvergenceError, "Failed to reach convergence in #{i} iterations"
+        end
       end
     end
 
     SSTABLES_PROPERTY = 'leveldb.sstables'.freeze
+    MAX_ITERATIONS = 10
+    ConvergenceError = Class.new(Error)
   end
 
   module LazyEnumerable
