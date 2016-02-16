@@ -113,6 +113,42 @@ module LevelDb
     def snapshot
       Snapshot.new(@db)
     end
+
+    def compact_range(options={})
+      from = options[:from]
+      to = options[:to]
+      @db.compact_range(encode_key(from), encode_key(to))
+    end
+
+    def full_compaction(options={})
+      pre_compaction_files_per_level = nil
+      i = 0
+      until pre_compaction_files_per_level == files_per_level
+        if i < options.fetch(:max_iterations, MAX_ITERATIONS)
+          pre_compaction_files_per_level = files_per_level
+          compact_range
+          i += 1
+        else
+          raise ConvergenceError, "Failed to reach convergence in #{i} iterations"
+        end
+      end
+    end
+
+    NUM_FILES_AT_LEVEL_FORMAT = 'leveldb.num-files-at-level%d'.freeze
+    MAX_ITERATIONS = 10
+    ConvergenceError = Class.new(Error)
+
+    private
+
+    def files_per_level
+      files_per_level = []
+      level = 0
+      while (value = @db.get_property(sprintf(NUM_FILES_AT_LEVEL_FORMAT, level)))
+        files_per_level << value.to_i
+        level += 1
+      end
+      files_per_level
+    end
   end
 
   module LazyEnumerable

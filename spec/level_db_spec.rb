@@ -65,6 +65,78 @@ describe LevelDb do
       db.close
     end
 
+    describe '#compact_range' do
+      let :leveldb do
+        leveldb = double(:db)
+        leveldb.stub(:compact_range) do |*args|
+          calls << args.map { |arg| arg && String.from_java_bytes(arg) }
+        end
+        leveldb
+      end
+
+      let :calls do
+        []
+      end
+
+      it 'compacts the given range' do
+        LevelDb::Db.new(leveldb).compact_range(from: 'one', to: 'three')
+        calls.should include(['one', 'three'])
+      end
+
+      it 'compacts the whole range to the "to" key when the "from" option is omitted' do
+        LevelDb::Db.new(leveldb).compact_range(to: 'three')
+        calls.should include([nil, 'three'])
+      end
+
+      it 'compacts the whole range from the "from" key when the "to" option is omitted' do
+        LevelDb::Db.new(leveldb).compact_range(from: 'one')
+        calls.should include(['one', nil])
+      end
+
+      it 'compacts the whole range when the both the "from" and "to" options are omitted' do
+        LevelDb::Db.new(leveldb).compact_range
+        calls.should include([nil, nil])
+      end
+    end
+
+    describe '#full_compaction' do
+      let :files_per_level do
+        %w[0 1]
+      end
+
+      let :leveldb do
+        leveldb = double(:db)
+        leveldb.stub(:compact_range) do
+          files_per_level.unshift("1").pop
+        end
+        leveldb.stub(:get_property) do |property|
+          if property =~ /leveldb\.num-files-at-level(\d+)/
+            files_per_level[$1.to_i]
+          end
+        end
+        leveldb
+      end
+
+      it 'compacts until there are no changes in the number of sstables' do
+        LevelDb::Db.new(leveldb).full_compaction
+        leveldb.should have_received(:compact_range).with(nil, nil).exactly(3).times
+      end
+
+      it "raises ConvergenceError unless convergence is reached within #{described_class::Db::MAX_ITERATIONS} iterations" do
+        files_per_level.replace((1..100).map(&:to_s))
+        expect { LevelDb::Db.new(leveldb).full_compaction }.to raise_error(described_class::Db::ConvergenceError)
+        leveldb.should have_received(:compact_range).with(nil, nil).exactly(described_class::Db::MAX_ITERATIONS).times
+      end
+
+      context 'when the "max_iterations" option is present' do
+        it 'raises ConvergenceError unless convergence is reached within "max_iterations" iterations' do
+          files_per_level.replace((1..100).map(&:to_s))
+          expect { LevelDb::Db.new(leveldb).full_compaction(max_iterations: 12) }.to raise_error(described_class::Db::ConvergenceError)
+          leveldb.should have_received(:compact_range).with(nil, nil).exactly(12).times
+        end
+      end
+    end
+
     describe '#close' do
       it 'closes the database' do
         db = double(:db)

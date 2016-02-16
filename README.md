@@ -34,6 +34,10 @@ snapshot = db.snapshot
 db.put('foo', 'baz')
 puts snapshot.get('foo') # => 'bar'
 puts db.get('foo') # => 'baz'
+
+# compactions
+db.compact_range(from: 'foo', to: 'foo08')
+db.full_compaction
 ```
 
 ## Contributing
