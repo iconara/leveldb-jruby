@@ -83,17 +83,17 @@ describe LevelDb do
         calls.should include(['one', 'three'])
       end
 
-      it "compacts the whole range to the 'to' key when the 'from' option is omitted" do
+      it 'compacts the whole range to the "to" key when the "from" option is omitted' do
         LevelDb::Db.new(leveldb).compact_range(to: 'three')
         calls.should include([nil, 'three'])
       end
 
-      it "compacts the whole range from the 'from' key when the 'to' option is omitted" do
+      it 'compacts the whole range from the "from" key when the "to" option is omitted' do
         LevelDb::Db.new(leveldb).compact_range(from: 'one')
         calls.should include(['one', nil])
       end
 
-      it "compacts the whole range when the both the 'from' and 'to' options are omitted" do
+      it 'compacts the whole range when the both the "from" and "to" options are omitted' do
         LevelDb::Db.new(leveldb).compact_range
         calls.should include([nil, nil])
       end
