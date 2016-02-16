@@ -121,14 +121,12 @@ module LevelDb
     end
 
     def full_compaction(options={})
-      sstables = @db.get_property(SSTABLES_PROPERTY)
-      pre_compaction_sstables = nil
+      pre_compaction_files_per_level = nil
       i = 0
-      until pre_compaction_sstables == sstables
+      until pre_compaction_files_per_level == files_per_level
         if i < options.fetch(:max_iterations, MAX_ITERATIONS)
-          pre_compaction_sstables = sstables
+          pre_compaction_files_per_level = files_per_level
           compact_range
-          sstables = @db.get_property(SSTABLES_PROPERTY)
           i += 1
         else
           raise ConvergenceError, "Failed to reach convergence in #{i} iterations"
@@ -136,9 +134,21 @@ module LevelDb
       end
     end
 
-    SSTABLES_PROPERTY = 'leveldb.sstables'.freeze
+    NUM_FILES_AT_LEVEL_FORMAT = 'leveldb.num-files-at-level%d'.freeze
     MAX_ITERATIONS = 10
     ConvergenceError = Class.new(Error)
+
+    private
+
+    def files_per_level
+      files_per_level = []
+      level = 0
+      while (value = @db.get_property(sprintf(NUM_FILES_AT_LEVEL_FORMAT, level)))
+        files_per_level << value.to_i
+        level += 1
+      end
+      files_per_level
+    end
   end
 
   module LazyEnumerable
